@@ -76,9 +76,12 @@ type DropDown struct {
 	// this form item.
 	finished func(tcell.Key)
 
-	// A callback function which is called when the user changes the drop-down's
+	// A callback function which is called when the user selected the drop-down's
 	// selection.
 	selected func(text string, index int)
+
+	// A callback function which is called when the user changes the drop-down's selection.
+	changed func(text string, index int)
 
 	dragging bool // Set to true when mouse dragging is in progress.
 }
@@ -258,13 +261,23 @@ func (d *DropDown) SetOptions(texts []string, selected func(text string, index i
 	return d
 }
 
-// SetSelectedFunc sets a handler which is called when the user changes the
+// SetSelectedFunc sets a handler which is called when the user selects the
 // drop-down's option. This handler will be called in addition and prior to
 // an option's optional individual handler. The handler is provided with the
 // selected option's text and index. If "no option" was selected, these values
 // are an empty string and -1.
 func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDown {
 	d.selected = handler
+	return d
+}
+
+// SetChangedFunc sets a handler which is called when the user changes the
+// drop-down's option. This handler will be called in addition and prior to
+// an option's optional individual handler. The handler is provided with the
+// selected option's text and index. If "no option" was selected, these values
+// are an empty string and -1.
+func (d *DropDown) SetChangedFunc(handler func(text string, index int)) *DropDown {
+	d.changed = handler
 	return d
 }
 
