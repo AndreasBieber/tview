@@ -283,6 +283,12 @@ type TreeView struct {
 
 	// The visible nodes, top-down, as set by process().
 	nodes []*TreeNode
+
+	// The text color for selected items.
+	selectedTextColor *tcell.Color
+
+	// The background color for selected items.
+	selectedBackgroundColor *tcell.Color
 }
 
 // NewTreeView returns a new tree view.
@@ -356,6 +362,18 @@ func (t *TreeView) SetAlign(align bool) *TreeView {
 // drawn to illustrate the tree's hierarchy.
 func (t *TreeView) SetGraphics(showGraphics bool) *TreeView {
 	t.graphics = showGraphics
+	return t
+}
+
+// SetSelectedTextColor sets the text color of selected items.
+func (t *TreeView) SetSelectedTextColor(color tcell.Color) *TreeView {
+	t.selectedTextColor = &color
+	return t
+}
+
+// SetSelectedBackgroundColor sets the background color of selected items.
+func (t *TreeView) SetSelectedBackgroundColor(color tcell.Color) *TreeView {
+	t.selectedBackgroundColor = &color
 	return t
 }
 
@@ -666,7 +684,15 @@ func (t *TreeView) Draw(screen tcell.Screen) {
 			if node.textX+prefixWidth < width {
 				style := tcell.StyleDefault.Foreground(node.color)
 				if node == t.currentNode {
-					style = tcell.StyleDefault.Background(node.color).Foreground(t.backgroundColor)
+					backgroundColor := node.color
+					foregroundColor := t.backgroundColor
+					if t.selectedTextColor != nil {
+						foregroundColor = *t.selectedTextColor
+					}
+					if t.selectedBackgroundColor != nil {
+						backgroundColor = *t.selectedBackgroundColor
+					}
+					style = tcell.StyleDefault.Background(backgroundColor).Foreground(foregroundColor)
 				}
 				printWithStyle(screen, node.text, x+node.textX+prefixWidth, posY, width-node.textX-prefixWidth, AlignLeft, style)
 			}
