@@ -80,9 +80,6 @@ type DropDown struct {
 	// selection.
 	selected func(text string, index int)
 
-	// A callback function which is called when the user changes the drop-down's selection.
-	changed func(text string, index int)
-
 	dragging bool // Set to true when mouse dragging is in progress.
 }
 
@@ -277,7 +274,9 @@ func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDo
 // selected option's text and index. If "no option" was selected, these values
 // are an empty string and -1.
 func (d *DropDown) SetChangedFunc(handler func(text string, index int)) *DropDown {
-	d.changed = handler
+	d.list.SetChangedFunc(func(index int, mainText string, _ string, _ rune) {
+		handler(mainText, index)
+	})
 	return d
 }
 
