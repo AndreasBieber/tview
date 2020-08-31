@@ -207,7 +207,7 @@ func (f *Form) AddPasswordField(label, value string, fieldWidth int, mask rune, 
 // and an (optional) callback function which is invoked when an option was
 // selected. The initial option may be a negative value to indicate that no
 // option is currently selected.
-func (f *Form) AddDropDown(label string, options []string, initialOption int, selected func(option string, optionIndex int)) *Form {
+func (f *Form) AddDropDown(label string, options []string, initialOption int, selected func(optionIndex int, option *DropDownOption)) *Form {
 	f.items = append(f.items, NewDropDown().
 		SetLabel(label).
 		SetOptions(options, selected).

@@ -95,7 +95,7 @@ type DropDown struct {
 
 	// A callback function which is called when the user selected the drop-down's
 	// selection.
-	selected func(text string, index int)
+	selected func(index int, option *DropDownOption)
 
 	dragging bool // Set to true when mouse dragging is in progress.
 }
@@ -133,7 +133,7 @@ func (d *DropDown) SetCurrentOption(index int) *DropDown {
 		d.currentOption = index
 		d.list.SetCurrentItem(index)
 		if d.selected != nil {
-			d.selected(d.options[index].Text, index)
+			d.selected(index, d.options[index])
 		}
 		if d.options[index].Selected != nil {
 			d.options[index].Selected()
@@ -142,7 +142,7 @@ func (d *DropDown) SetCurrentOption(index int) *DropDown {
 		d.currentOption = -1
 		d.list.SetCurrentItem(0) // Set to 0 because -1 means "last item".
 		if d.selected != nil {
-			d.selected("", -1)
+			d.selected(-1, nil)
 		}
 	}
 	return d
@@ -260,9 +260,8 @@ func (d *DropDown) AddOption(option *DropDownOption) *DropDown {
 
 // SetOptions replaces all current options with the ones provided and installs
 // one callback function which is called when one of the options is selected.
-// It will be called with the option's text and its index into the options
-// slice. The "selected" parameter may be nil.
-func (d *DropDown) SetOptions(texts []string, selected func(text string, index int)) *DropDown {
+// It will be called with the index and options. The "selected" parameter may be nil.
+func (d *DropDown) SetOptions(texts []string, selected func(index int, option *DropDownOption)) *DropDown {
 	d.list.Clear()
 	d.options = nil
 	for index, text := range texts {
@@ -277,9 +276,9 @@ func (d *DropDown) SetOptions(texts []string, selected func(text string, index i
 // SetSelectedFunc sets a handler which is called when the user selects the
 // drop-down's option. This handler will be called in addition and prior to
 // an option's optional individual handler. The handler is provided with the
-// selected option's text and index. If "no option" was selected, these values
-// are an empty string and -1.
-func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDown {
+// selected index and option. If "no option" was selected, these values
+// are a -1 and nil.
+func (d *DropDown) SetSelectedFunc(handler func(index int, option *DropDownOption)) *DropDown {
 	d.selected = handler
 	return d
 }
@@ -287,10 +286,10 @@ func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDo
 // SetChangedFunc sets a handler which is called when the user changes the
 // drop-down's option. This handler will be called in addition and prior to
 // an option's optional individual handler. The handler is provided with the
-// selected option's text and index. If "no option" was selected, these values
-// are an empty string and -1.
+// selected index and option. If "no option" was selected, these values
+// are -1 and nil.
 func (d *DropDown) SetChangedFunc(handler func(index int, option *DropDownOption)) *DropDown {
-	d.list.SetChangedFunc(func(index int, mainText string, _ string, _ rune) {
+	d.list.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
 		handler(index, d.options[index])
 	})
 	return d
@@ -479,7 +478,7 @@ func (d *DropDown) openList(setFocus func(Primitive)) {
 
 		// Trigger "selected" event.
 		if d.selected != nil {
-			d.selected(d.options[d.currentOption].Text, d.currentOption)
+			d.selected(d.currentOption, d.options[d.currentOption])
 		}
 		if d.options[d.currentOption].Selected != nil {
 			d.options[d.currentOption].Selected()
@@ -496,7 +495,11 @@ func (d *DropDown) openList(setFocus func(Primitive)) {
 			d.evalPrefix()
 		} else if event.Key() == tcell.KeyEscape {
 			d.currentOption = optionBefore
+			d.list.SetCurrentItem(d.currentOption)
 			d.closeList(setFocus)
+			if d.selected != nil {
+				d.selected(d.currentOption, d.options[d.currentOption])
+			}
 		} else {
 			d.prefix = ""
 		}
