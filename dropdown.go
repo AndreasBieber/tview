@@ -289,9 +289,9 @@ func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDo
 // an option's optional individual handler. The handler is provided with the
 // selected option's text and index. If "no option" was selected, these values
 // are an empty string and -1.
-func (d *DropDown) SetChangedFunc(handler func(text string, index int)) *DropDown {
+func (d *DropDown) SetChangedFunc(handler func(index int, option *DropDownOption)) *DropDown {
 	d.list.SetChangedFunc(func(index int, mainText string, _ string, _ rune) {
-		handler(mainText, index)
+		handler(index, d.options[index])
 	})
 	return d
 }
