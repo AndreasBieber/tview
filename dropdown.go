@@ -6,10 +6,27 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-// dropDownOption is one option that can be selected in a drop-down primitive.
-type dropDownOption struct {
-	Text     string // The text to be displayed in the drop-down.
-	Selected func() // The (optional) callback for when this option was selected.
+// DropDownOption is one option that can be selected in a drop-down primitive.
+type DropDownOption struct {
+	Text      string      // The text to be displayed in the drop-down.
+	Selected  func()      // The (optional) callback for when this option was selected.
+	Reference interface{} // An optional reference object.
+}
+
+func NewDropDownOption(text string) *DropDownOption {
+	return &DropDownOption{Text: text}
+}
+
+// SetSelectedFunc sets the handler to be called when this option is selected.
+func (d *DropDownOption) SetSelectedFunc(handler func()) *DropDownOption {
+	d.Selected = handler
+	return d
+}
+
+// SetReference allows you to store a reference of any type in this option.
+func (d *DropDownOption) SetReference(reference interface{}) *DropDownOption {
+	d.Reference = reference
+	return d
 }
 
 // DropDown implements a selection widget whose options become visible in a
@@ -20,7 +37,7 @@ type DropDown struct {
 	*Box
 
 	// The options from which the user can choose.
-	options []*dropDownOption
+	options []*DropDownOption
 
 	// Strings to be placed before and after each drop-down option.
 	optionPrefix, optionSuffix string
@@ -234,11 +251,10 @@ func (d *DropDown) GetFieldWidth() int {
 	return fieldWidth
 }
 
-// AddOption adds a new selectable option to this drop-down. The "selected"
-// callback is called when this option was selected. It may be nil.
-func (d *DropDown) AddOption(text string, selected func()) *DropDown {
-	d.options = append(d.options, &dropDownOption{Text: text, Selected: selected})
-	d.list.AddItem(d.optionPrefix+text+d.optionSuffix, "", 0, nil)
+// AddOption adds a new selectable option to this drop-down.
+func (d *DropDown) AddOption(option *DropDownOption) *DropDown {
+	d.options = append(d.options, option)
+	d.list.AddItem(d.optionPrefix+option.Text+d.optionSuffix, "", 0, nil)
 	return d
 }
 
@@ -251,7 +267,7 @@ func (d *DropDown) SetOptions(texts []string, selected func(text string, index i
 	d.options = nil
 	for index, text := range texts {
 		func(t string, i int) {
-			d.AddOption(text, nil)
+			d.AddOption(NewDropDownOption(text))
 		}(text, index)
 	}
 	d.selected = selected
