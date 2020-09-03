@@ -67,11 +67,20 @@ type DropDown struct {
 	// The label color.
 	labelColor tcell.Color
 
+	// The label color when focused.
+	labelColorActivated tcell.Color
+
 	// The background color of the input area.
 	fieldBackgroundColor tcell.Color
 
+	// The background color of the input area when focused.
+	fieldBackgroundColorActivated tcell.Color
+
 	// The text color of the input area.
 	fieldTextColor tcell.Color
+
+	// The text color of the input area when focused.
+	fieldTextColorActivated tcell.Color
 
 	// The color for prefixes.
 	prefixTextColor tcell.Color
@@ -111,13 +120,16 @@ func NewDropDown() *DropDown {
 		SetBackgroundColor(Styles.MoreContrastBackgroundColor)
 
 	d := &DropDown{
-		Box:                  NewBox(),
-		currentOption:        -1,
-		list:                 list,
-		labelColor:           Styles.SecondaryTextColor,
-		fieldBackgroundColor: Styles.ContrastBackgroundColor,
-		fieldTextColor:       Styles.PrimaryTextColor,
-		prefixTextColor:      Styles.ContrastSecondaryTextColor,
+		Box:                           NewBox(),
+		currentOption:                 -1,
+		list:                          list,
+		labelColor:                    Styles.SecondaryTextColor,
+		labelColorActivated:           Styles.SecondaryTextColor,
+		fieldBackgroundColor:          Styles.ContrastBackgroundColor,
+		fieldBackgroundColorActivated: Styles.PrimaryTextColor,
+		fieldTextColor:                Styles.PrimaryTextColor,
+		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
+		prefixTextColor:               Styles.ContrastSecondaryTextColor,
 	}
 
 	d.focus = d
@@ -199,15 +211,33 @@ func (d *DropDown) SetLabelColor(color tcell.Color) *DropDown {
 	return d
 }
 
+// SetLabelColorActivated sets the color of the label when focused.
+func (d *DropDown) SetLabelColorActivated(color tcell.Color) *DropDown {
+	d.labelColorActivated = color
+	return d
+}
+
 // SetFieldBackgroundColor sets the background color of the options area.
 func (d *DropDown) SetFieldBackgroundColor(color tcell.Color) *DropDown {
 	d.fieldBackgroundColor = color
 	return d
 }
 
+// SetFieldBackgroundColorActivated sets the background color of the options area when focused.
+func (d *DropDown) SetFieldBackgroundColorActivated(color tcell.Color) *DropDown {
+	d.fieldBackgroundColorActivated = color
+	return d
+}
+
 // SetFieldTextColor sets the text color of the options area.
 func (d *DropDown) SetFieldTextColor(color tcell.Color) *DropDown {
 	d.fieldTextColor = color
+	return d
+}
+
+// SetFieldTextColorActivated sets the text color of the options area when focused.
+func (d *DropDown) SetFieldTextColorActivated(color tcell.Color) *DropDown {
+	d.fieldTextColorActivated = color
 	return d
 }
 
@@ -220,12 +250,15 @@ func (d *DropDown) SetPrefixTextColor(color tcell.Color) *DropDown {
 }
 
 // SetFormAttributes sets attributes shared by all form items.
-func (d *DropDown) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem {
+func (d *DropDown) SetFormAttributes(labelWidth int, bgColor, labelColor, labelColorActivated, fieldTextColor, fieldTextColorActivated, fieldBgColor, fieldBgColorActivated tcell.Color) FormItem {
 	d.labelWidth = labelWidth
-	d.labelColor = labelColor
 	d.backgroundColor = bgColor
+	d.labelColor = labelColor
+	d.labelColorActivated = labelColorActivated
 	d.fieldTextColor = fieldTextColor
+	d.fieldTextColorActivated = fieldTextColorActivated
 	d.fieldBackgroundColor = fieldBgColor
+	d.fieldBackgroundColorActivated = fieldBgColorActivated
 	return d
 }
 
@@ -248,7 +281,7 @@ func (d *DropDown) GetFieldWidth() int {
 			fieldWidth = width
 		}
 	}
-	return fieldWidth
+	return fieldWidth + len(d.optionPrefix) + len(d.optionSuffix) + 2
 }
 
 // AddOption adds a new selectable option to this drop-down.
@@ -317,6 +350,14 @@ func (d *DropDown) SetFinishedFunc(handler func(key tcell.Key)) FormItem {
 func (d *DropDown) Draw(screen tcell.Screen) {
 	d.Box.Draw(screen)
 
+	labelColor := d.labelColor
+	fieldBackgroundColor := d.fieldBackgroundColor
+	fieldTextColor := d.fieldTextColor
+	if d.GetFocusable().HasFocus() {
+		labelColor = d.labelColorActivated
+		fieldBackgroundColor = d.fieldBackgroundColorActivated
+		fieldTextColor = d.fieldTextColorActivated
+	}
 	// Prepare.
 	x, y, width, height := d.GetInnerRect()
 	rightLimit := x + width
@@ -330,10 +371,10 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 		if labelWidth > rightLimit-x {
 			labelWidth = rightLimit - x
 		}
-		Print(screen, d.label, x, y, labelWidth, AlignLeft, d.labelColor)
+		Print(screen, d.label, x, y, labelWidth, AlignLeft, labelColor)
 		x += labelWidth
 	} else {
-		_, drawnWidth := Print(screen, d.label, x, y, rightLimit-x, AlignLeft, d.labelColor)
+		_, drawnWidth := Print(screen, d.label, x, y, rightLimit-x, AlignLeft, labelColor)
 		x += drawnWidth
 	}
 
@@ -366,10 +407,8 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 	if rightLimit-x < fieldWidth {
 		fieldWidth = rightLimit - x
 	}
-	fieldStyle := tcell.StyleDefault.Background(d.fieldBackgroundColor)
-	if d.GetFocusable().HasFocus() && !d.open {
-		fieldStyle = fieldStyle.Background(d.fieldTextColor)
-	}
+
+	fieldStyle := tcell.StyleDefault.Background(fieldBackgroundColor)
 	for index := 0; index < fieldWidth; index++ {
 		screen.SetContent(x+index, y, ' ', nil, fieldStyle)
 	}
@@ -380,20 +419,16 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 		currentOptionPrefixWidth := TaggedStringWidth(d.currentOptionPrefix)
 		prefixWidth := stringWidth(d.prefix)
 		listItemText := d.options[d.list.GetCurrentItem()].Text
-		Print(screen, d.currentOptionPrefix, x, y, fieldWidth, AlignLeft, d.fieldTextColor)
+		Print(screen, d.currentOptionPrefix, x, y, fieldWidth, AlignLeft, fieldTextColor)
 		Print(screen, d.prefix, x+currentOptionPrefixWidth, y, fieldWidth-currentOptionPrefixWidth, AlignLeft, d.prefixTextColor)
 		if len(d.prefix) < len(listItemText) {
 			Print(screen, listItemText[len(d.prefix):]+d.currentOptionSuffix, x+prefixWidth+currentOptionPrefixWidth, y, fieldWidth-prefixWidth-currentOptionPrefixWidth, AlignLeft, d.fieldTextColor)
 		}
 	} else {
-		color := d.fieldTextColor
+		color := fieldTextColor
 		text := d.noSelection
 		if d.currentOption >= 0 && d.currentOption < len(d.options) {
 			text = d.currentOptionPrefix + d.options[d.currentOption].Text + d.currentOptionSuffix
-		}
-		// Just show the current selection.
-		if d.GetFocusable().HasFocus() && !d.open {
-			color = d.fieldBackgroundColor
 		}
 		Print(screen, text, x, y, fieldWidth, AlignLeft, color)
 	}

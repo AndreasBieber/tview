@@ -18,7 +18,7 @@ type FormItem interface {
 	GetLabel() string
 
 	// SetFormAttributes sets a number of item attributes at once.
-	SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+	SetFormAttributes(labelWidth int, bgColor, labelColor, labelColorActivated, fieldTextColor, fieldTextColorActivated, fieldBgColor, fieldBgColorActivated tcell.Color) FormItem
 
 	// GetFieldWidth returns the width of the form item's field (the area which
 	// is manipulated by the user) in number of screen cells. A value of 0
@@ -66,17 +66,32 @@ type Form struct {
 	// The label color.
 	labelColor tcell.Color
 
+	// The label color when focused.
+	labelColorActivated tcell.Color
+
 	// The background color of the input area.
 	fieldBackgroundColor tcell.Color
+
+	// The background color of the input area when focused.
+	fieldBackgroundColorActivated tcell.Color
 
 	// The text color of the input area.
 	fieldTextColor tcell.Color
 
+	// The text color of the input area when focused.
+	fieldTextColorActivated tcell.Color
+
 	// The background color of the buttons.
 	buttonBackgroundColor tcell.Color
 
+	// The background color of the buttons when focused.
+	buttonBackgroundColorActivated tcell.Color
+
 	// The color of the button text.
 	buttonTextColor tcell.Color
+
+	// The color of the button text when focused.
+	buttonTextColorActivated tcell.Color
 
 	// An optional function which is called when the user hits Escape.
 	cancel func()
@@ -87,17 +102,20 @@ func NewForm() *Form {
 	box := NewBox().SetBorderPadding(1, 1, 1, 1)
 
 	f := &Form{
-		Box:                   box,
-		itemPadding:           1,
-		labelColor:            Styles.SecondaryTextColor,
-		fieldBackgroundColor:  Styles.ContrastBackgroundColor,
-		fieldTextColor:        Styles.PrimaryTextColor,
-		buttonBackgroundColor: Styles.ContrastBackgroundColor,
-		buttonTextColor:       Styles.PrimaryTextColor,
+		Box:                            box,
+		itemPadding:                    1,
+		labelColor:                     Styles.SecondaryTextColor,
+		labelColorActivated:            Styles.SecondaryTextColor,
+		fieldBackgroundColor:           Styles.ContrastBackgroundColor,
+		fieldBackgroundColorActivated:  Styles.PrimaryTextColor,
+		fieldTextColor:                 Styles.PrimaryTextColor,
+		fieldTextColorActivated:        Styles.ContrastBackgroundColor,
+		buttonBackgroundColor:          Styles.ContrastBackgroundColor,
+		buttonBackgroundColorActivated: Styles.PrimaryTextColor,
+		buttonTextColor:                Styles.PrimaryTextColor,
+		buttonTextColorActivated:       Styles.ContrastBackgroundColor,
 	}
-
 	f.focus = f
-
 	return f
 }
 
@@ -124,15 +142,33 @@ func (f *Form) SetLabelColor(color tcell.Color) *Form {
 	return f
 }
 
+// SetLabelColorActivated sets the color of the labels when focused.
+func (f *Form) SetLabelColorActivated(color tcell.Color) *Form {
+	f.labelColorActivated = color
+	return f
+}
+
 // SetFieldBackgroundColor sets the background color of the input areas.
 func (f *Form) SetFieldBackgroundColor(color tcell.Color) *Form {
 	f.fieldBackgroundColor = color
 	return f
 }
 
+// SetFieldBackgroundColorActivated sets the background color of the input areas when focused.
+func (f *Form) SetFieldBackgroundColorActivated(color tcell.Color) *Form {
+	f.fieldBackgroundColorActivated = color
+	return f
+}
+
 // SetFieldTextColor sets the text color of the input areas.
 func (f *Form) SetFieldTextColor(color tcell.Color) *Form {
 	f.fieldTextColor = color
+	return f
+}
+
+// SetFieldTextColorActivated sets the text color of the input areas when focused.
+func (f *Form) SetFieldTextColorActivated(color tcell.Color) *Form {
+	f.fieldTextColorActivated = color
 	return f
 }
 
@@ -149,9 +185,21 @@ func (f *Form) SetButtonBackgroundColor(color tcell.Color) *Form {
 	return f
 }
 
+// SetButtonBackgroundColorActivated sets the background color of the buttons when focused.
+func (f *Form) SetButtonBackgroundColorActivated(color tcell.Color) *Form {
+	f.buttonBackgroundColorActivated = color
+	return f
+}
+
 // SetButtonTextColor sets the color of the button texts.
 func (f *Form) SetButtonTextColor(color tcell.Color) *Form {
 	f.buttonTextColor = color
+	return f
+}
+
+// SetButtonTextColorActivated sets the color of the button texts when focused.
+func (f *Form) SetButtonTextColorActivated(color tcell.Color) *Form {
+	f.buttonTextColorActivated = color
 	return f
 }
 
@@ -419,10 +467,13 @@ func (f *Form) Draw(screen tcell.Screen) {
 		}
 		item.SetFormAttributes(
 			labelWidth,
-			f.labelColor,
 			f.backgroundColor,
+			f.labelColor,
+			f.labelColorActivated,
 			f.fieldTextColor,
+			f.fieldTextColorActivated,
 			f.fieldBackgroundColor,
+			f.fieldBackgroundColorActivated,
 		)
 
 		// Save position.

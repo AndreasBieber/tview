@@ -24,11 +24,20 @@ type Checkbox struct {
 	// The label color.
 	labelColor tcell.Color
 
+	// The label color when focused.
+	labelColorActivated tcell.Color
+
 	// The background color of the input area.
 	fieldBackgroundColor tcell.Color
 
+	// The background color of the input area when focused.
+	fieldBackgroundColorActivated tcell.Color
+
 	// The text color of the input area.
 	fieldTextColor tcell.Color
+
+	// The text color of the input area when focused.
+	fieldTextColorActivated tcell.Color
 
 	// An optional function which is called when the user changes the checked
 	// state of this checkbox.
@@ -47,10 +56,13 @@ type Checkbox struct {
 // NewCheckbox returns a new input field.
 func NewCheckbox() *Checkbox {
 	return &Checkbox{
-		Box:                  NewBox(),
-		labelColor:           Styles.SecondaryTextColor,
-		fieldBackgroundColor: Styles.ContrastBackgroundColor,
-		fieldTextColor:       Styles.PrimaryTextColor,
+		Box:                           NewBox(),
+		labelColor:                    Styles.SecondaryTextColor,
+		labelColorActivated:           Styles.SecondaryTextColor,
+		fieldBackgroundColor:          Styles.ContrastBackgroundColor,
+		fieldBackgroundColorActivated: Styles.PrimaryTextColor,
+		fieldTextColor:                Styles.PrimaryTextColor,
+		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
 	}
 }
 
@@ -89,9 +101,21 @@ func (c *Checkbox) SetLabelColor(color tcell.Color) *Checkbox {
 	return c
 }
 
+// SetLabelColorActivated sets the color of the label when focused.
+func (c *Checkbox) SetLabelColorActivated(color tcell.Color) *Checkbox {
+	c.labelColorActivated = color
+	return c
+}
+
 // SetFieldBackgroundColor sets the background color of the input area.
 func (c *Checkbox) SetFieldBackgroundColor(color tcell.Color) *Checkbox {
 	c.fieldBackgroundColor = color
+	return c
+}
+
+// SetFieldBackgroundColorActivated sets the background color of the input area when focused.
+func (c *Checkbox) SetFieldBackgroundColorActivated(color tcell.Color) *Checkbox {
+	c.fieldBackgroundColorActivated = color
 	return c
 }
 
@@ -101,13 +125,22 @@ func (c *Checkbox) SetFieldTextColor(color tcell.Color) *Checkbox {
 	return c
 }
 
+// SetFieldTextColorActivated sets the text color of the input area when focused.
+func (c *Checkbox) SetFieldTextColorActivated(color tcell.Color) *Checkbox {
+	c.fieldTextColorActivated = color
+	return c
+}
+
 // SetFormAttributes sets attributes shared by all form items.
-func (c *Checkbox) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem {
+func (c *Checkbox) SetFormAttributes(labelWidth int, bgColor, labelColor, labelColorActivated, fieldTextColor, fieldTextColorActivated, fieldBgColor, fieldBgColorActivated tcell.Color) FormItem {
 	c.labelWidth = labelWidth
-	c.labelColor = labelColor
 	c.backgroundColor = bgColor
+	c.labelColor = labelColor
+	c.labelColorActivated = labelColorActivated
 	c.fieldTextColor = fieldTextColor
+	c.fieldTextColorActivated = fieldTextColorActivated
 	c.fieldBackgroundColor = fieldBgColor
+	c.fieldBackgroundColorActivated = fieldBgColorActivated
 	return c
 }
 
@@ -146,6 +179,15 @@ func (c *Checkbox) SetFinishedFunc(handler func(key tcell.Key)) FormItem {
 func (c *Checkbox) Draw(screen tcell.Screen) {
 	c.Box.Draw(screen)
 
+	labelColor := c.labelColor
+	fieldBackgroundColor := c.fieldBackgroundColor
+	fieldTextColor := c.fieldTextColor
+	if c.GetFocusable().HasFocus() {
+		labelColor = c.labelColorActivated
+		fieldBackgroundColor = c.fieldBackgroundColorActivated
+		fieldTextColor = c.fieldTextColorActivated
+	}
+
 	// Prepare
 	x, y, width, height := c.GetInnerRect()
 	rightLimit := x + width
@@ -159,18 +201,16 @@ func (c *Checkbox) Draw(screen tcell.Screen) {
 		if labelWidth > rightLimit-x {
 			labelWidth = rightLimit - x
 		}
-		Print(screen, c.label, x, y, labelWidth, AlignLeft, c.labelColor)
+		Print(screen, c.label, x, y, labelWidth, AlignLeft, labelColor)
 		x += labelWidth
 	} else {
-		_, drawnWidth := Print(screen, c.label, x, y, rightLimit-x, AlignLeft, c.labelColor)
+		_, drawnWidth := Print(screen, c.label, x, y, rightLimit-x, AlignLeft, labelColor)
 		x += drawnWidth
 	}
 
 	// Draw checkbox.
-	fieldStyle := tcell.StyleDefault.Background(c.fieldBackgroundColor).Foreground(c.fieldTextColor)
-	if c.focus.HasFocus() {
-		fieldStyle = fieldStyle.Background(c.fieldTextColor).Foreground(c.fieldBackgroundColor)
-	}
+	fieldStyle := tcell.StyleDefault.Background(fieldBackgroundColor).Foreground(fieldTextColor)
+
 	checkedRune := 'X'
 	if !c.checked {
 		checkedRune = ' '
