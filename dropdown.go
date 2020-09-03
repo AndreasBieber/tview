@@ -46,7 +46,7 @@ type DropDown struct {
 	// currently selected.
 	currentOption int
 
-	// Strings to be placed beefore and after the current option.
+	// Strings to be placed before and after the current option.
 	currentOptionPrefix, currentOptionSuffix string
 
 	// The text to be displayed when no option has yet been selected.
@@ -107,6 +107,9 @@ type DropDown struct {
 	selected func(index int, option *DropDownOption)
 
 	dragging bool // Set to true when mouse dragging is in progress.
+
+	// The chars to show when the option's text gets shortened.
+	abbreviationChars string
 }
 
 // NewDropDown returns a new drop-down.
@@ -130,6 +133,7 @@ func NewDropDown() *DropDown {
 		fieldTextColor:                Styles.PrimaryTextColor,
 		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
 		prefixTextColor:               Styles.ContrastSecondaryTextColor,
+		abbreviationChars:             "...",
 	}
 
 	d.focus = d
@@ -281,7 +285,8 @@ func (d *DropDown) GetFieldWidth() int {
 			fieldWidth = width
 		}
 	}
-	return fieldWidth + len(d.optionPrefix) + len(d.optionSuffix) + 2
+	fieldWidth += len(d.currentOptionPrefix) + len(d.currentOptionSuffix)
+	return fieldWidth
 }
 
 // AddOption adds a new selectable option to this drop-down.
@@ -429,6 +434,9 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 		text := d.noSelection
 		if d.currentOption >= 0 && d.currentOption < len(d.options) {
 			text = d.currentOptionPrefix + d.options[d.currentOption].Text + d.currentOptionSuffix
+		}
+		if fieldWidth > len(d.abbreviationChars)+3 && len(text) > fieldWidth {
+			text = text[0:fieldWidth-3-len(d.abbreviationChars)] + d.abbreviationChars
 		}
 		Print(screen, text, x, y, fieldWidth, AlignLeft, color)
 	}
