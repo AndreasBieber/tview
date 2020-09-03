@@ -498,7 +498,9 @@ func (d *DropDown) openList(setFocus func(Primitive)) {
 			d.list.SetCurrentItem(d.currentOption)
 			d.closeList(setFocus)
 			if d.selected != nil {
-				d.selected(d.currentOption, d.options[d.currentOption])
+				if d.currentOption > -1 {
+					d.selected(d.currentOption, d.options[d.currentOption])
+				}
 			}
 		} else {
 			d.prefix = ""
