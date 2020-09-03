@@ -175,7 +175,9 @@ func (c *Checkbox) Draw(screen tcell.Screen) {
 	if !c.checked {
 		checkedRune = ' '
 	}
-	screen.SetContent(x, y, checkedRune, nil, fieldStyle)
+	screen.SetContent(x, y, ' ', nil, fieldStyle)
+	screen.SetContent(x+1, y, checkedRune, nil, fieldStyle)
+	screen.SetContent(x+2, y, ' ', nil, fieldStyle)
 }
 
 // InputHandler returns the handler for this primitive.
