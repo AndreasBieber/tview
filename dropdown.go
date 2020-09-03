@@ -108,6 +108,9 @@ type DropDown struct {
 
 	dragging bool // Set to true when mouse dragging is in progress.
 
+	// The symbol to draw at the end of the field.
+	dropDownSymbol rune
+
 	// The chars to show when the option's text gets shortened.
 	abbreviationChars string
 }
@@ -133,6 +136,7 @@ func NewDropDown() *DropDown {
 		fieldTextColor:                Styles.PrimaryTextColor,
 		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
 		prefixTextColor:               Styles.ContrastSecondaryTextColor,
+		dropDownSymbol:                '▼',
 		abbreviationChars:             "...",
 	}
 
@@ -286,6 +290,7 @@ func (d *DropDown) GetFieldWidth() int {
 		}
 	}
 	fieldWidth += len(d.currentOptionPrefix) + len(d.currentOptionSuffix)
+	fieldWidth += 3 // space + drop down symbol + space
 	return fieldWidth
 }
 
@@ -440,6 +445,9 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 		}
 		Print(screen, text, x, y, fieldWidth, AlignLeft, color)
 	}
+
+	// Draw drop down symbol
+	screen.SetContent(x+fieldWidth-2, y, d.dropDownSymbol, nil, new(tcell.Style).Foreground(fieldTextColor).Background(fieldBackgroundColor))
 
 	// Draw options list.
 	if d.HasFocus() && d.open {
