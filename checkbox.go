@@ -51,6 +51,9 @@ type Checkbox struct {
 	// A callback function set by the Form class and called when the user leaves
 	// this form item.
 	finished func(tcell.Key)
+
+	// The rune to show when the checkbox is checked
+	checkedRune rune
 }
 
 // NewCheckbox returns a new input field.
@@ -63,6 +66,7 @@ func NewCheckbox() *Checkbox {
 		fieldBackgroundColorActivated: Styles.PrimaryTextColor,
 		fieldTextColor:                Styles.PrimaryTextColor,
 		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
+		checkedRune:                   'X',
 	}
 }
 
@@ -175,6 +179,12 @@ func (c *Checkbox) SetFinishedFunc(handler func(key tcell.Key)) FormItem {
 	return c
 }
 
+// SetCheckedRune sets the rune to show when the checkbox is checked.
+func (c *Checkbox) SetCheckedRune(rune rune) *Checkbox {
+	c.checkedRune = rune
+	return c
+}
+
 // Draw draws this primitive onto the screen.
 func (c *Checkbox) Draw(screen tcell.Screen) {
 	c.Box.Draw(screen)
@@ -211,7 +221,7 @@ func (c *Checkbox) Draw(screen tcell.Screen) {
 	// Draw checkbox.
 	fieldStyle := tcell.StyleDefault.Background(fieldBackgroundColor).Foreground(fieldTextColor)
 
-	checkedRune := 'X'
+	checkedRune := c.checkedRune
 	if !c.checked {
 		checkedRune = ' '
 	}
