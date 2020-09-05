@@ -79,9 +79,9 @@ type InputField struct {
 	cursorPos int
 
 	// An optional autocomplete function which receives the current text of the
-	// input field and returns a slice of strings to be displayed in a drop-down
+	// input field and returns a slice of ListItems to be displayed in a drop-down
 	// selection.
-	autocomplete func(text string) []string
+	autocomplete func(text string) []*ListItem
 
 	// The List object which shows the selectable autocomplete entries. If not
 	// nil, the list's main texts represent the current autocomplete entries.
@@ -235,12 +235,12 @@ func (i *InputField) SetMaskCharacter(mask rune) *InputField {
 }
 
 // SetAutocompleteFunc sets an autocomplete callback function which may return
-// strings to be selected from a drop-down based on the current text of the
+// ListItems to be selected from a drop-down based on the current text of the
 // input field. The drop-down appears only if len(entries) > 0. The callback is
 // invoked in this function and whenever the current text changes or when
 // Autocomplete() is called. Entries are cleared when the user selects an entry
 // or presses Escape.
-func (i *InputField) SetAutocompleteFunc(callback func(currentText string) (entries []string)) *InputField {
+func (i *InputField) SetAutocompleteFunc(callback func(currentText string) (entries []*ListItem)) *InputField {
 	i.autocomplete = callback
 	i.Autocomplete()
 	return i
@@ -284,8 +284,8 @@ func (i *InputField) Autocomplete() *InputField {
 	currentEntry := -1
 	i.autocompleteList.Clear()
 	for index, entry := range entries {
-		i.autocompleteList.AddItem(entry, "", 0, nil)
-		if currentEntry < 0 && entry == i.text {
+		i.autocompleteList.AddItem(entry)
+		if currentEntry < 0 && entry.mainText == i.text {
 			currentEntry = index
 		}
 	}
@@ -611,7 +611,7 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 		case tcell.KeyDown, tcell.KeyTab: // Autocomplete selection.
 			if i.autocompleteList != nil {
 				count := i.autocompleteList.GetItemCount()
-				newEntry := i.autocompleteList.GetCurrentItem() + 1
+				newEntry := i.autocompleteList.GetCurrentItemIndex() + 1
 				if newEntry >= count {
 					newEntry = 0
 				}
@@ -623,7 +623,7 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 			}
 		case tcell.KeyUp, tcell.KeyBacktab: // Autocomplete selection.
 			if i.autocompleteList != nil {
-				newEntry := i.autocompleteList.GetCurrentItem() - 1
+				newEntry := i.autocompleteList.GetCurrentItemIndex() - 1
 				if newEntry < 0 {
 					newEntry = i.autocompleteList.GetItemCount() - 1
 				}

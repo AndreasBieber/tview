@@ -321,7 +321,7 @@ func (d *DropDown) GetFieldWidth() int {
 // AddOption adds a new selectable option to this drop-down.
 func (d *DropDown) AddOption(option *DropDownOption) *DropDown {
 	d.options = append(d.options, option)
-	d.list.AddItem(d.optionPrefix+option.Text+d.optionSuffix, "", 0, nil)
+	d.list.AddItem(NewListItem(d.optionPrefix + option.Text + d.optionSuffix))
 	return d
 }
 
@@ -356,7 +356,7 @@ func (d *DropDown) SetSelectedFunc(handler func(index int, option *DropDownOptio
 // selected index and option. If "no option" was selected, these values
 // are -1 and nil.
 func (d *DropDown) SetChangedFunc(handler func(index int, option *DropDownOption)) *DropDown {
-	d.list.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
+	d.list.SetChangedFunc(func(index int, _ *ListItem) {
 		handler(index, d.options[index])
 	})
 	return d
@@ -452,7 +452,7 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 		// Show the prefix.
 		currentOptionPrefixWidth := TaggedStringWidth(d.currentOptionPrefix)
 		prefixWidth := stringWidth(d.prefix)
-		listItemText := d.options[d.list.GetCurrentItem()].Text
+		listItemText := d.options[d.list.GetCurrentItemIndex()].Text
 		Print(screen, d.currentOptionPrefix, x, y, fieldWidth, AlignLeft, fieldTextColor)
 		Print(screen, d.prefix, x+currentOptionPrefixWidth, y, fieldWidth-currentOptionPrefixWidth, AlignLeft, d.prefixTextColor)
 		if len(d.prefix) < len(listItemText) {
@@ -542,7 +542,7 @@ func (d *DropDown) openList(setFocus func(Primitive)) {
 	d.open = true
 	optionBefore := d.currentOption
 
-	d.list.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+	d.list.SetSelectedFunc(func(index int, item *ListItem) {
 		if d.dragging {
 			return // If we're dragging the mouse, we don't want to trigger any events.
 		}
