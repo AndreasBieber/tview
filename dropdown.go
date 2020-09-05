@@ -313,8 +313,11 @@ func (d *DropDown) GetFieldWidth() int {
 			fieldWidth = width
 		}
 	}
-	fieldWidth += len(d.currentOptionPrefix) + len(d.currentOptionSuffix)
-	fieldWidth += 3 // space + drop down symbol + space
+	fieldWidth += TaggedStringWidth(d.currentOptionPrefix) + TaggedStringWidth(d.currentOptionSuffix)
+	if len(d.currentOptionSuffix) == 0 {
+		fieldWidth += 1 // space between text and drop down symbol
+	}
+	fieldWidth += 2 // drop down symbol + space
 	return fieldWidth
 }
 
@@ -423,7 +426,7 @@ func (d *DropDown) Draw(screen tcell.Screen) {
 	}
 
 	// Draw selection area.
-	fieldWidth := d.fieldWidth
+	fieldWidth := d.GetFieldWidth()
 	if fieldWidth == 0 {
 		fieldWidth = maxWidth
 		if d.currentOption < 0 {
