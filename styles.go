@@ -12,6 +12,7 @@ type Theme struct {
 	FocusColor                  tcell.Color // Box focus color.
 	GraphicsColor               tcell.Color // Graphics.
 	PrimaryTextColor            tcell.Color // Primary text.
+	ContrastPrimaryTextColor    tcell.Color // Primary text for contrasting elements.
 	SecondaryTextColor          tcell.Color // Secondary text (e.g. labels).
 	TertiaryTextColor           tcell.Color // Tertiary text (e.g. subtitles, notes).
 	InverseTextColor            tcell.Color // Text on primary-colored backgrounds.
@@ -30,6 +31,7 @@ var Styles = Theme{
 	FocusColor:                  tcell.ColorGreen,
 	GraphicsColor:               tcell.ColorWhite,
 	PrimaryTextColor:            tcell.ColorWhite,
+	ContrastPrimaryTextColor:    tcell.ColorBlack,
 	SecondaryTextColor:          tcell.ColorYellow,
 	TertiaryTextColor:           tcell.ColorGreen,
 	InverseTextColor:            tcell.ColorBlue,

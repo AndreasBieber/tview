@@ -63,6 +63,24 @@ type InputField struct {
 	// The text color of the placeholder.
 	placeholderTextColor tcell.Color
 
+	// The text color of the placeholder when focused.
+	placeholderTextColorActivated tcell.Color
+
+	// The text color of the list items.
+	autocompleteListTextColor tcell.Color
+
+	// The background color of the autocomplete list.
+	autocompleteListBackgroundColor tcell.Color
+
+	// The text color of the selected ListItem.
+	autocompleteListSelectedTextColor tcell.Color
+
+	// The background color of the selected ListItem.
+	autocompleteListSelectedBackgroundColor tcell.Color
+
+	// The text color of the suggestion.
+	autocompleteSuggestionTextColor tcell.Color
+
 	// The screen width of the label area. A value of 0 means use the width of
 	// the label text.
 	labelWidth int
@@ -88,6 +106,9 @@ type InputField struct {
 	autocompleteList      *List
 	autocompleteListMutex sync.Mutex
 
+	// The suggested completion of the current autocomplete ListItem.
+	autocompleteListSuggestion string
+
 	// An optional function which may reject the last character that was entered.
 	accept func(text string, ch rune) bool
 
@@ -110,14 +131,19 @@ type InputField struct {
 // NewInputField returns a new input field.
 func NewInputField() *InputField {
 	return &InputField{
-		Box:                           NewBox(),
-		labelColor:                    Styles.SecondaryTextColor,
-		labelColorActivated:           Styles.SecondaryTextColor,
-		fieldBackgroundColor:          Styles.ContrastBackgroundColor,
-		fieldBackgroundColorActivated: Styles.PrimaryTextColor,
-		fieldTextColor:                Styles.PrimaryTextColor,
-		fieldTextColorActivated:       Styles.ContrastBackgroundColor,
-		placeholderTextColor:          Styles.ContrastSecondaryTextColor,
+		Box:                                     NewBox(),
+		labelColor:                              Styles.SecondaryTextColor,
+		labelColorActivated:                     Styles.SecondaryTextColor,
+		fieldBackgroundColor:                    Styles.ContrastBackgroundColor,
+		fieldBackgroundColorActivated:           Styles.ContrastBackgroundColor,
+		fieldTextColor:                          Styles.PrimaryTextColor,
+		fieldTextColorActivated:                 Styles.PrimaryTextColor,
+		placeholderTextColor:                    Styles.ContrastSecondaryTextColor,
+		autocompleteListTextColor:               Styles.PrimitiveBackgroundColor,
+		autocompleteListBackgroundColor:         Styles.MoreContrastBackgroundColor,
+		autocompleteListSelectedTextColor:       Styles.PrimitiveBackgroundColor,
+		autocompleteListSelectedBackgroundColor: Styles.PrimaryTextColor,
+		autocompleteSuggestionTextColor:         Styles.ContrastPrimaryTextColor,
 	}
 }
 
@@ -202,6 +228,42 @@ func (i *InputField) SetPlaceholderTextColor(color tcell.Color) *InputField {
 	return i
 }
 
+// SetPlaceholderTextColorActivated sets the text color of placeholder text when focused.
+func (i *InputField) SetPlaceholderTextColorActivated(color tcell.Color) *InputField {
+	i.placeholderTextColorActivated = color
+	return i
+}
+
+// SetAutocompleteListTextColor sets the text color of the ListItems.
+func (i *InputField) SetAutocompleteListTextColor(color tcell.Color) *InputField {
+	i.autocompleteListTextColor = color
+	return i
+}
+
+// SetAutocompleteListBackgroundColor sets the background color of the autocomplete list.
+func (i *InputField) SetAutocompleteListBackgroundColor(color tcell.Color) *InputField {
+	i.autocompleteListBackgroundColor = color
+	return i
+}
+
+// SetAutocompleteListSelectedTextColor sets the text color of the selected ListItem.
+func (i *InputField) SetAutocompleteListSelectedTextColor(color tcell.Color) *InputField {
+	i.autocompleteListSelectedTextColor = color
+	return i
+}
+
+// SetAutocompleteListSelectedBackgroundColor sets the background of the selected ListItem.
+func (i *InputField) SetAutocompleteListSelectedBackgroundColor(color tcell.Color) *InputField {
+	i.autocompleteListSelectedBackgroundColor = color
+	return i
+}
+
+// SetAutocompleteSuggestionColor sets the text color of the autocomplete suggestion in the input field.
+func (i *InputField) SetAutocompleteSuggestionTextColor(color tcell.Color) *InputField {
+	i.autocompleteSuggestionTextColor = color
+	return i
+}
+
 // SetFormAttributes sets attributes shared by all form items.
 func (i *InputField) SetFormAttributes(labelWidth int, bgColor, labelColor, labelColorActivated, fieldTextColor, fieldTextColorActivated, fieldBgColor, fieldBgColorActivated tcell.Color) FormItem {
 	i.labelWidth = labelWidth
@@ -266,18 +328,21 @@ func (i *InputField) Autocomplete() *InputField {
 	if len(entries) == 0 {
 		// No entries, no list.
 		i.autocompleteList = nil
+		i.autocompleteListSuggestion = ""
 		return i
 	}
 
 	// Make a list if we have none.
 	if i.autocompleteList == nil {
 		i.autocompleteList = NewList()
-		i.autocompleteList.ShowSecondaryText(false).
-			SetMainTextColor(Styles.PrimitiveBackgroundColor).
-			SetSelectedTextColor(Styles.PrimitiveBackgroundColor).
-			SetSelectedBackgroundColor(Styles.PrimaryTextColor).
+		i.autocompleteList.
+			SetChangedFunc(i.autocompleteChanged).
+			ShowSecondaryText(false).
+			SetMainTextColor(i.autocompleteListTextColor).
+			SetSelectedTextColor(i.autocompleteListSelectedTextColor).
+			SetSelectedBackgroundColor(i.autocompleteListSelectedBackgroundColor).
 			SetHighlightFullLine(true).
-			SetBackgroundColor(Styles.MoreContrastBackgroundColor)
+			SetBackgroundColor(i.autocompleteListBackgroundColor)
 	}
 
 	// Fill it with the entries.
@@ -393,9 +458,11 @@ func (i *InputField) Draw(screen tcell.Screen) {
 		if i.maskCharacter > 0 {
 			text = strings.Repeat(string(i.maskCharacter), utf8.RuneCountInString(i.text))
 		}
-		if fieldWidth >= stringWidth(text) {
+		drawnText := ""
+		if fieldWidth >= stringWidth(text)+stringWidth(i.autocompleteListSuggestion) {
 			// We have enough space for the full text.
-			Print(screen, Escape(text), x, y, fieldWidth, AlignLeft, fieldTextColor)
+			drawnText = Escape(text)
+			Print(screen, drawnText, x, y, fieldWidth, AlignLeft, fieldTextColor)
 			i.offset = 0
 			iterateString(text, func(main rune, comb []rune, textPos, textWidth, screenPos, screenWidth int) bool {
 				if textPos >= i.cursorPos {
@@ -433,7 +500,12 @@ func (i *InputField) Draw(screen tcell.Screen) {
 				}
 				return false
 			})
-			Print(screen, Escape(text[i.offset:]), x, y, fieldWidth, AlignLeft, fieldTextColor)
+			drawnText = Escape(text[i.offset:])
+			Print(screen, drawnText, x, y, fieldWidth, AlignLeft, fieldTextColor)
+		}
+		// Print suggestion
+		if i.maskCharacter == 0 && i.autocompleteListSuggestion != "" {
+			Print(screen, i.autocompleteListSuggestion, x+stringWidth(drawnText), y, fieldWidth-stringWidth(drawnText), AlignLeft, i.autocompleteSuggestionTextColor)
 		}
 	}
 
@@ -602,9 +674,20 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 			home()
 		case tcell.KeyEnd, tcell.KeyCtrlE:
 			end()
-		case tcell.KeyEnter, tcell.KeyEscape: // We might be done.
+		case tcell.KeyEnter:
+			if i.autocompleteList != nil {
+				currentItem := i.autocompleteList.GetCurrentItem()
+				if referenceVal, isString := currentItem.reference.(string); isString {
+					i.SetText(referenceVal)
+				} else {
+					i.SetText(currentItem.mainText)
+				}
+			}
+			fallthrough
+		case tcell.KeyEscape: // We might be done.
 			if i.autocompleteList != nil {
 				i.autocompleteList = nil
+				i.autocompleteListSuggestion = ""
 			} else {
 				finish(key)
 			}
@@ -616,8 +699,6 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 					newEntry = 0
 				}
 				i.autocompleteList.SetCurrentItem(newEntry)
-				currentText, _ = i.autocompleteList.GetItemText(newEntry) // Don't trigger changed function twice.
-				i.SetText(currentText)
 			} else {
 				finish(key)
 			}
@@ -628,13 +709,19 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 					newEntry = i.autocompleteList.GetItemCount() - 1
 				}
 				i.autocompleteList.SetCurrentItem(newEntry)
-				currentText, _ = i.autocompleteList.GetItemText(newEntry) // Don't trigger changed function twice.
-				i.SetText(currentText)
 			} else {
 				finish(key)
 			}
 		}
 	})
+}
+
+func (i *InputField) autocompleteChanged(index int, item *ListItem) {
+	if referenceVal, isString := item.reference.(string); isString {
+		i.autocompleteListSuggestion = referenceVal[len(i.text):]
+	} else {
+		i.autocompleteListSuggestion = item.mainText[len(i.text):]
+	}
 }
 
 // MouseHandler returns the mouse handler for this primitive.
