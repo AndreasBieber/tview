@@ -81,6 +81,12 @@ type InputField struct {
 	// The text color of the suggestion.
 	autocompleteSuggestionTextColor tcell.Color
 
+	// The text color of the note.
+	noteTextColor tcell.Color
+
+	// The note to show underneath the input field.
+	note string
+
 	// The screen width of the label area. A value of 0 means use the width of
 	// the label text.
 	labelWidth int
@@ -144,6 +150,7 @@ func NewInputField() *InputField {
 		autocompleteListSelectedTextColor:       Styles.PrimitiveBackgroundColor,
 		autocompleteListSelectedBackgroundColor: Styles.PrimaryTextColor,
 		autocompleteSuggestionTextColor:         Styles.ContrastPrimaryTextColor,
+		noteTextColor:                           Styles.SecondaryTextColor,
 	}
 }
 
@@ -269,6 +276,24 @@ func (i *InputField) SetAutocompleteListSelectedBackgroundColor(color tcell.Colo
 // SetAutocompleteSuggestionColor sets the text color of the autocomplete suggestion in the input field.
 func (i *InputField) SetAutocompleteSuggestionTextColor(color tcell.Color) *InputField {
 	i.autocompleteSuggestionTextColor = color
+	return i
+}
+
+// SetNoteTextColor sets the text color of the note.
+func (i *InputField) SetNoteTextColor(color tcell.Color) *InputField {
+	i.noteTextColor = color
+	return i
+}
+
+// SetNote sets the text to show underneath the input field, i.e. when the input is invalid.
+func (i *InputField) SetNote(note string) *InputField {
+	i.note = note
+	return i
+}
+
+// ResetNote sets the note to an empty string.
+func (i *InputField) ResetNote() *InputField {
+	i.note = ""
 	return i
 }
 
@@ -515,6 +540,11 @@ func (i *InputField) Draw(screen tcell.Screen) {
 		if i.maskCharacter == 0 && i.autocompleteListSuggestion != "" {
 			Print(screen, i.autocompleteListSuggestion, x+stringWidth(drawnText), y, fieldWidth-stringWidth(drawnText), AlignLeft, i.autocompleteSuggestionTextColor)
 		}
+	}
+
+	// Draw note
+	if i.note != "" {
+		Print(screen, i.note, x, y+1, fieldWidth, AlignLeft, i.noteTextColor)
 	}
 
 	// Draw autocomplete list.
