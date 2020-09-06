@@ -174,13 +174,13 @@ func (d *DropDown) SetCurrentOption(index int) *DropDown {
 }
 
 // GetCurrentOption returns the index of the currently selected option as well
-// as its text. If no option was selected, -1 and an empty string is returned.
-func (d *DropDown) GetCurrentOption() (int, string) {
-	var text string
+// as the option itself. If no option was selected, -1 and nil is returned.
+func (d *DropDown) GetCurrentOption() (int, *DropDownOption) {
+	var option *DropDownOption
 	if d.currentOption >= 0 && d.currentOption < len(d.options) {
-		text = d.options[d.currentOption].Text
+		option = d.options[d.currentOption]
 	}
-	return d.currentOption, text
+	return d.currentOption, option
 }
 
 // SetTextOptions sets the text to be placed before and after each drop-down
