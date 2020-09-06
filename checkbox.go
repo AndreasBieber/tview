@@ -70,6 +70,11 @@ func NewCheckbox() *Checkbox {
 	}
 }
 
+// GetFieldHeight returns the height of the field.
+func (c *Checkbox) GetFieldHeight() int {
+	return 1
+}
+
 // SetChecked sets the state of the checkbox.
 func (c *Checkbox) SetChecked(checked bool) *Checkbox {
 	c.checked = checked

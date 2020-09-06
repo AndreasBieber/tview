@@ -145,6 +145,11 @@ func NewDropDown() *DropDown {
 	return d
 }
 
+// GetFieldHeight returns the height of the field.
+func (d *DropDown) GetFieldHeight() int {
+	return 1
+}
+
 // SetCurrentOption sets the index of the currently selected option. This may
 // be a negative value to indicate that no option is currently selected. Calling
 // this function will also trigger the "selected" callback (if there is one).

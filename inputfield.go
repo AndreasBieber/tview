@@ -147,6 +147,14 @@ func NewInputField() *InputField {
 	}
 }
 
+// GetFieldHeight returns the height of the field.
+func (i *InputField) GetFieldHeight() int {
+	if i.note == "" {
+		return 1
+	}
+	return 2
+}
+
 // SetText sets the current text of the input field.
 func (i *InputField) SetText(text string) *InputField {
 	i.text = text
