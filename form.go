@@ -357,6 +357,9 @@ func (f *Form) GetFormItemCount() int {
 // 0. Elements are referenced in the order they were added. Buttons are not
 // included.
 func (f *Form) GetFormItem(index int) FormItem {
+	if index > len(f.items)-1 || index < 0 {
+		return nil
+	}
 	return f.items[index]
 }
 
