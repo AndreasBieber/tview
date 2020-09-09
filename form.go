@@ -596,6 +596,11 @@ func (f *Form) Draw(screen tcell.Screen) {
 
 	// Draw buttons.
 	for index, button := range f.buttons {
+		button.SetLabelColor(f.buttonTextColor).
+			SetLabelColorActivated(f.buttonBackgroundColor).
+			SetBackgroundColorActivated(f.buttonTextColor).
+			SetBackgroundColor(f.buttonBackgroundColor)
+
 		// Set position.
 		buttonIndex := index + len(f.items)
 		y := positions[buttonIndex].y - offset
