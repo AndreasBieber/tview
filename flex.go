@@ -64,6 +64,12 @@ func (f *Flex) SetDirection(direction int) *Flex {
 	return f
 }
 
+// GetDirection returns the direction in which the contained primitives are
+// distributed. This can be either FlexColumn (default) or FlexRow.
+func (f *Flex) GetDirection() int {
+	return f.direction
+}
+
 // SetFullScreen sets the flag which, when true, causes the flex layout to use
 // the entire screen space instead of whatever size it is currently assigned to.
 func (f *Flex) SetFullScreen(fullScreen bool) *Flex {
